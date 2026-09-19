@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>DSH-ELITE — EA Scalper Hedging Otomatis</title>
+  <meta name="description" content="DSH-ELITE adalah EA scalper hedging otomatis dengan Dual Pending BUY/SELL STOP, Recovery Chain Martingale, Basket Trailing Take Profit, Adaptive ATR Distance Engine, Daily Profit/Loss Limit, dan real-time dashboard.">
+  <meta name="theme-color" content="#080808">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #050505;
+      --bg-2: #0a0a0a;
+      --panel: #0d0d0d;
+      --panel-2: #111111;
+      --gold: #d6a23a;
+      --gold-light: #ffe08a;
+      --gold-dark: #8c641e;
+      --text: #f4f1e8;
+      --muted: #99958b;
+      --line: rgba(214,162,58,.25);
+      --green: #39d98a;
+      --red: #ff5757;
+      --shadow: 0 20px 60px rgba(0,0,0,.55);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(214,162,58,.10), transparent 28%),
+        radial-gradient(circle at 85% 15%, rgba(214,162,58,.07), transparent 24%),
+        linear-gradient(135deg, #030303 0%, #0a0a0a 45%, #050505 100%);
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .035;
+      background-image:
+        linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px);
+      background-size: 45px 45px;
+      mask-image: linear-gradient(to bottom, black, transparent 80%);
+      z-index: -1;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 40px));
+      margin: auto;
+    }
+
+    /* ---------- HEADER ---------- */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(18px);
+      background: rgba(5,5,5,.84);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 25px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: Rajdhani, sans-serif;
+      font-size: 25px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .brand img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+
+    .brand span {
+      background: linear-gradient(90deg, #fff3b5, var(--gold), #fff0a1);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    nav a {
+      color: #c9c5ba;
+      font-size: 14px;
+      transition: .25s;
+    }
+
+    nav a:hover {
+      color: var(--gold-light);
+    }
+
+    .nav-btn {
+      padding: 10px 17px;
+      border: 1px solid var(--gold);
+      border-radius: 9px;
+      color: var(--gold-light);
+    }
+
+    .menu-btn {
+      display: none;
+      background: none;
+      border: 1px solid var(--line);
+      color: white;
+      padding: 9px 11px;
+      border-radius: 9px;
+      font-size: 20px;
+    }
+
+    /* ---------- HERO ---------- */
+    .hero {
+      min-height: 720px;
+      display: grid;
+      place-items: center;
+      padding: 80px 0 70px;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      right: -280px;
+      top: 30px;
+      background: radial-gradient(circle, rgba(214,162,58,.12), transparent 68%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      align-items: center;
+      gap: 70px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: rgba(214,162,58,.06);
+      padding: 7px 13px;
+      border-radius: 999px;
+      color: var(--gold-light);
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--green);
+    }
+
+    h1 {
+      font-family: Rajdhani, sans-serif;
+      font-size: clamp(54px, 8vw, 94px);
+      line-height: .88;
+      margin: 0 0 24px;
+      letter-spacing: 2px;
+      background: linear-gradient(180deg, #fff8cf 0%, #d8a641 48%, #8d5f17 100%);
+      -webkit-background-clip: text;
+      color: transparent;
+      text-shadow: 0 15px 45px rgba(214,162,58,.12);
+    }
+
+    .hero h2 {
+      font-size: clamp(21px, 3vw, 31px);
+      margin: 0 0 18px;
+      font-weight: 700;
+    }
+
+    .hero p {
+      color: var(--muted);
+      max-width: 620px;
+      font-size: 16px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 13px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 13px 21px;
+      border-radius: 10px;
+      border: 1px solid var(--gold-dark);
+      font-weight: 700;
+      font-size: 14px;
+      transition: .25s;
+    }
+
+    .btn-primary {
+      color: #080705;
+      background: linear-gradient(135deg, #ffe39a, #b77d1f);
+      box-shadow: 0 8px 30px rgba(214,162,58,.18);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(214,162,58,.28);
+    }
+
+    .btn-outline {
+      color: var(--gold-light);
+      background: rgba(255,255,255,.02);
+    }
+
+    .btn-outline:hover {
+      background: rgba(214,162,58,.08);
+    }
+
+    .hero-logo {
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .hero-logo::before {
+      content: "";
+      position: absolute;
+      width: 440px;
+      height: 440px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(214,162,58,.17), transparent 65%);
+      filter: blur(5px);
+    }
+
+    .hero-logo img {
+      width: min(480px, 90%);
+      position: relative;
+      filter: drop-shadow(0 30px 45px rgba(0,0,0,.7));
+      animation: float 5s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* ---------- STATS ---------- */
+    .stats {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.018);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .stat {
+      padding: 28px 20px;
+      text-align: center;
+      border-right: 1px solid var(--line);
+    }
+
+    .stat:last-child { border-right: 0; }
+
+    .stat strong {
+      display: block;
+      font-family: Rajdhani, sans-serif;
+      font-size: 30px;
+      color: var(--gold-light);
+    }
+
+    .stat span {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ---------- SECTION ---------- */
+    section {
+      padding: 100px 0;
+    }
+
+    .section-head {
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto 48px;
+    }
+
+    .section-head .label {
+      color: var(--gold);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 800;
+    }
+
+    .section-head h2 {
+      font-family: Rajdhani, sans-serif;
+      font-size: clamp(35px, 5vw, 54px);
+      margin: 8px 0 12px;
+    }
+
+    .section-head p {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    /* ---------- FEATURES ---------- */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.012)),
+        #0b0b0b;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 27px;
+      box-shadow: var(--shadow);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(214,162,58,.08), transparent 35%);
+      pointer-events: none;
+    }
+
+    .icon {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--gold-light);
+      font-size: 22px;
+      margin-bottom: 18px;
+      background: rgba(214,162,58,.06);
+    }
+
+    .card h3 {
+      margin: 0 0 9px;
+      font-size: 18px;
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    /* ---------- DASHBOARD ---------- */
+    .dashboard-wrap {
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: linear-gradient(145deg, #16120a, #080808);
+      box-shadow: 0 35px 90px rgba(0,0,0,.65);
+    }
+
+    .dashboard-wrap img {
+      width: 100%;
+      border-radius: 13px;
+      border: 1px solid rgba(214,162,58,.18);
+    }
+
+    .dashboard-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 15px;
+    }
+
+    /* ---------- ENGINE ---------- */
+    .engine {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .engine-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 30px;
+      background: #0a0a0a;
+    }
+
+    .engine-card h3 {
+      color: var(--gold-light);
+      margin-top: 0;
+    }
+
+    .engine-card ul {
+      padding-left: 20px;
+      margin-bottom: 0;
+    }
+
+    .engine-card li {
+      margin: 10px 0;
+      color: #bbb6aa;
+    }
+
+    .engine-card li::marker {
+      color: var(--gold);
+    }
+
+    /* ---------- CTA ---------- */
+    .cta {
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 70px 25px;
+      background:
+        radial-gradient(circle at center, rgba(214,162,58,.11), transparent 60%),
+        #0a0a0a;
+    }
+
+    .cta h2 {
+      font-family: Rajdhani, sans-serif;
+      font-size: clamp(38px, 6vw, 60px);
+      margin: 0 0 10px;
+    }
+
+    .cta p {
+      color: var(--muted);
+      max-width: 700px;
+      margin: 0 auto 25px;
+    }
+
+    /* ---------- FOOTER ---------- */
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 35px 0;
+      background: #040404;
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .copyright {
+      color: #77736b;
+      font-size: 12px;
+    }
+
+    .footer-brand {
+      color: var(--gold-light);
+      font-family: Rajdhani, sans-serif;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    /* ---------- MOBILE ---------- */
+    @media (max-width: 900px) {
+      .hero-grid,
+      .engine {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 55px;
+      }
+
+      .hero-logo {
+        order: -1;
+      }
+
+      .hero-logo img {
+        width: min(350px, 80%);
+      }
+
+      .features {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      nav {
+        display: none;
+        position: absolute;
+        top: 76px;
+        left: 0;
+        right: 0;
+        padding: 20px;
+        background: rgba(5,5,5,.97);
+        border-bottom: 1px solid var(--line);
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      nav.open {
+        display: flex;
+      }
+
+      nav a {
+        padding: 9px 0;
+      }
+
+      .menu-btn {
+        display: block;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        width: min(100% - 26px, 1180px);
+      }
+
+      .brand {
+        font-size: 20px;
+      }
+
+      .brand img {
+        width: 40px;
+        height: 40px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stat:nth-child(2) {
+        border-right: 0;
+      }
+
+      .stat:nth-child(-n+2) {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .features {
+        grid-template-columns: 1fr;
+      }
+
+      section {
+        padding: 70px 0;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .footer-grid {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ================= HEADER ================= -->
+  <header>
+    <div class="container nav">
+      <a class="brand" href="#home">
+        <img src="assets/logo.png" alt="DSH-ELITE Logo">
+        <span>DSH-ELITE</span>
+      </a>
+
+      <button class="menu-btn" id="menuBtn" aria-label="Buka menu">☰</button>
+
+      <nav id="mainNav">
+        <a href="#home">Home</a>
+        <a href="#features">Features</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#engine">Engine</a>
+        <a href="#risk">Risk Control</a>
+        <a href="kalkulator.html">Kalkulator</a>
+        <a href="#contact" class="nav-btn">Get Started</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ================= HERO ================= -->
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+
+        <div class="hero-content">
+          <div class="eyebrow">Automated MT5 Trading System</div>
+
+          <h1>DSH-ELITE</h1>
+
+          <h2>EA Scalper Hedging Otomatis</h2>
+
+          <p>
+            Sistem trading otomatis dengan Dual Pending BUY/SELL STOP,
+            Recovery Chain Martingale yang dapat dikonfigurasi,
+            Basket Trailing Take Profit, Adaptive ATR Distance Engine,
+            serta Daily Profit/Loss Limit untuk kontrol risiko yang presisi.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#dashboard">Lihat Dashboard</a>
+            <a class="btn btn-outline" href="#features">Jelajahi Fitur</a>
+          </div>
+        </div>
+
+        <div class="hero-logo">
+          <img src="assets/logo.png" alt="DSH-ELITE Premium Logo">
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= STATS ================= -->
+    <div class="stats">
+      <div class="container stats-grid">
+        <div class="stat">
+          <strong>BUY / SELL</strong>
+          <span>Dual Pending Stop</span>
+        </div>
+        <div class="stat">
+          <strong>3 UNIT</strong>
+          <span>Currency / Points / Pips</span>
+        </div>
+        <div class="stat">
+          <strong>ATR</strong>
+          <span>Adaptive Distance</span>
+        </div>
+        <div class="stat">
+          <strong>REAL-TIME</strong>
+          <span>Monitoring Dashboard</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= FEATURES ================= -->
+    <section id="features">
+      <div class="container">
+
+        <div class="section-head">
+          <div class="label">Core System</div>
+          <h2>Precision Trading Architecture</h2>
+          <p>
+            Dirancang untuk memberikan kontrol konfigurasi yang luas
+            pada strategi scalping hedging otomatis.
+          </p>
+        </div>
+
+        <div class="features">
+
+          <article class="card">
+            <div class="icon">⇅</div>
+            <h3>Dual Pending BUY/SELL STOP</h3>
+            <p>
+              Menempatkan pending order dua arah untuk menangkap
+              pergerakan harga ketika terjadi breakout.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="icon">⛓</div>
+            <h3>Recovery Chain Martingale</h3>
+            <p>
+              Sistem recovery bertingkat dengan parameter lot,
+              multiplier, step, dan jumlah maksimum chain yang dapat dikonfigurasi.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="icon">◈</div>
+            <h3>Basket Trailing Take Profit</h3>
+            <p>
+              Mengelola profit berdasarkan keseluruhan basket posisi,
+              bukan hanya satu posisi individual.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="icon">⌁</div>
+            <h3>3 Satuan Take Profit</h3>
+            <p>
+              Pilih target Basket Trailing dalam Currency, Points,
+              atau Pips sesuai kebutuhan strategi.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="icon">⌁</div>
+            <h3>Adaptive ATR Distance</h3>
+            <p>
+              Jarak pending order dapat menyesuaikan volatilitas pasar
+              menggunakan ATR secara dinamis.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="icon">◉</div>
+            <h3>Daily Profit / Loss Limit</h3>
+            <p>
+              Membantu membatasi aktivitas EA berdasarkan batas profit
+              dan kerugian harian yang ditentukan pengguna.
+            </p>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DASHBOARD ================= -->
+    <section id="dashboard">
+      <div class="container">
+
+        <div class="section-head">
+          <div class="label">Real-Time Monitoring</div>
+          <h2>DSH-ELITE Dashboard</h2>
+          <p>
+            Antarmuka monitoring bergaya Obsidian & Gold untuk memantau
+            status EA, posisi, pending order, recovery chain, basket TP,
+            ATR engine, dan risk limits.
+          </p>
+        </div>
+
+        <div class="dashboard-wrap">
+          <img
+            src="assets/dsh-dashboard.png"
+            alt="DSH-ELITE Real-Time Trading Dashboard"
+            loading="lazy">
+        </div>
+
+        <div class="dashboard-note">
+          DSH-ELITE Dashboard — tampilan konsep / monitoring interface.
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= ENGINE ================= -->
+    <section id="engine">
+      <div class="container">
+
+        <div class="section-head">
+          <div class="label">Adaptive Engine</div>
+          <h2>Trading Engine yang Dapat Dikonfigurasi</h2>
+          <p>
+            Parameter strategi dapat disesuaikan dengan karakteristik
+            instrumen dan profil risiko pengguna.
+          </p>
+        </div>
+
+        <div class="engine">
+
+          <div class="engine-card">
+            <h3>Recovery Chain</h3>
+            <ul>
+              <li>Initial lot size</li>
+              <li>Lot multiplier</li>
+              <li>Maximum recovery steps</li>
+              <li>Recovery distance</li>
+              <li>Basket-based recovery management</li>
+              <li>Parameter chain dapat dikonfigurasi</li>
+            </ul>
+          </div>
+
+          <div class="engine-card">
+            <h3>Adaptive ATR Distance</h3>
+            <ul>
+              <li>ATR period</li>
+              <li>ATR multiplier</li>
+              <li>Dynamic BUY STOP distance</li>
+              <li>Dynamic SELL STOP distance</li>
+              <li>Adaptasi terhadap perubahan volatilitas</li>
+              <li>Parameter dapat disesuaikan per instrumen</li>
+            </ul>
+          </div>
+
+          <div class="engine-card" id="risk">
+            <h3>Risk Management</h3>
+            <ul>
+              <li>Daily Profit Limit</li>
+              <li>Daily Loss Limit</li>
+              <li>Maximum recovery steps</li>
+              <li>Basket exposure monitoring</li>
+              <li>Trading status monitoring</li>
+              <li>Emergency control dapat diterapkan melalui EA</li>
+            </ul>
+          </div>
+
+          <div class="engine-card">
+            <h3>Basket Trailing TP</h3>
+            <ul>
+              <li>Currency mode</li>
+              <li>Points mode</li>
+              <li>Pips mode</li>
+              <li>Basket trigger profit</li>
+              <li>Trailing distance</li>
+              <li>Trailing step</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CTA ================= -->
+    <section id="contact">
+      <div class="container">
+        <div class="cta">
+          <div class="label">DSH-ELITE</div>
+          <h2>Kontrol Penuh. Risiko Terukur.</h2>
+          <p>
+            Bangun sistem trading otomatis dengan parameter yang dapat
+            disesuaikan untuk berbagai instrumen MetaTrader 5.
+          </p>
+
+          <div class="hero-actions" style="justify-content:center">
+            <a class="btn btn-primary" href="#home">Back to Top</a>
+            <a class="btn btn-outline" href="#features">View Features</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer>
+    <div class="container footer-grid">
+      <div class="footer-brand">DSH-ELITE</div>
+      <div class="copyright">
+        © <span id="year"></span> DSH-ELITE. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile navigation
+    const menuBtn = document.getElementById("menuBtn");
+    const mainNav = document.getElementById("mainNav");
+
+    menuBtn.addEventListener("click", () => {
+      mainNav.classList.toggle("open");
+    });
+
+    document.querySelectorAll("#mainNav a").forEach(link => {
+      link.addEventListener("click", () => {
+        mainNav.classList.remove("open");
+      });
+    });
+
+    // Current year
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
